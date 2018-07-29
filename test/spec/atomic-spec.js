@@ -87,4 +87,46 @@ describe('atomic', function () {
 
 	});
 
+	describe('setting defaults', function() {
+
+		it('should allow setting defaults', function() {
+			spyOn(XMLHttpRequest.prototype, 'setRequestHeader');
+
+			var oldDefaults = Object.assign({}, atomic.defaults);
+
+			atomic.defaults.username = 'test';
+			atomic.defaults.headers = {
+				'Some-Custom-Header': 'Blah',
+				'Overide-Header': 'This should be overriden below.'
+			};
+
+			atomic('/endpoint', {
+				headers: {
+					'Another-Header': 'Blah',
+					'Overide-Header': 'Overriden.'
+				}
+			}).then(function() {});
+
+
+			expect(XMLHttpRequest.prototype.setRequestHeader).toHaveBeenCalledWith('Some-Custom-Header', 'Blah');
+			expect(XMLHttpRequest.prototype.setRequestHeader).toHaveBeenCalledWith('Another-Header', 'Blah');
+			expect(XMLHttpRequest.prototype.setRequestHeader).toHaveBeenCalledWith('Overide-Header', 'Overriden.');
+
+			atomic.defaults = oldDefaults;
+		});
+
+		it('should alias post', function() {
+			spyOn(XMLHttpRequest.prototype, 'open').and.callThrough();
+			spyOn(XMLHttpRequest.prototype, 'send');
+
+			atomic.post('/endpoint', { first_name: 'John', last_name: 'Smith' }).then(function() {
+
+			});
+
+			expect(XMLHttpRequest.prototype.open).toHaveBeenCalledWith('POST', '/endpoint', true, null, null);
+			expect(XMLHttpRequest.prototype.send).toHaveBeenCalledWith('first_name=John&last_name=Smith');
+		});
+
+	});
+
 });

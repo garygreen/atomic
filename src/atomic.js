@@ -1,9 +1,24 @@
 'use strict';
 
-var settings;
+/**
+ * Instatiate Atomic
+ * @param {String} url      The request URL
+ * @param {Object} options  A set of options for the request [optional]
+ */
+function Atomic(url, options) {
 
-// Default settings
-var defaults = {
+	// Check browser support
+	if (!supports()) throw 'Atomic: This browser does not support the methods used in this plugin.';
+
+	// Merge options into defaults
+	settings = extend(Atomic.defaults, options || {});
+
+	// Make request
+	return makeRequest(url);
+
+};
+
+Atomic.defaults = {
 	method: 'GET',
 	username: null,
 	password: null,
@@ -15,6 +30,16 @@ var defaults = {
 	timeout: null,
 	withCredentials: false
 };
+
+Atomic.get = function(url, data, settings) {
+	return new Atomic(url, extend({ data: data }, settings));
+}
+
+Atomic.post = function(url, data, settings) {
+	return new Atomic(url, extend({ data: data, method: 'POST' }, settings));
+}
+
+var settings;
 
 /**
  * Feature test
@@ -175,31 +200,5 @@ var makeRequest = function (url) {
 	return xhrPromise;
 
 };
-
-/**
- * Instatiate Atomic
- * @param {String} url      The request URL
- * @param {Object} options  A set of options for the request [optional]
- */
-function Atomic(url, options) {
-
-	// Check browser support
-	if (!supports()) throw 'Atomic: This browser does not support the methods used in this plugin.';
-
-	// Merge options into defaults
-	settings = extend(defaults, options || {});
-
-	// Make request
-	return makeRequest(url);
-
-};
-
-Atomic.get = function(url, data, settings) {
-	return new Atomic(url, extend({ data: data }, settings));
-}
-
-Atomic.post = function(url, data, settings) {
-	return new Atomic(url, extend({ data: data, method: 'POST' }, settings));
-}
 
 export default Atomic;
