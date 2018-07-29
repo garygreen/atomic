@@ -7,3 +7,5 @@ script: npm test
 cache:
   directories:
   - "$HOME/.npm"
+  sudo: required
+  
