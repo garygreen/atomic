@@ -4,12 +4,9 @@ A lightweight, Promise-based vanilla JS Ajax/HTTP library.
 
 ### Installation
 
-There are two versions of Atomic:
-
-1. Standalone version
-2. Polyfilled version for ES6 Promises
-
-If you're using a browser that doesn't Promises, use the polyfilled version, or ensure you have a Promise polyfill.
+```
+npm install atomic2
+```
 
 **Direct Download**
 
@@ -85,10 +82,9 @@ xhr.cancel();
 
 ## Browser Compatibility
 
-Atomic works in all modern browsers, and IE8 and above.
+Atomic works in all modern browsers, and IE8 and above that supports Promises.
 
-The standalone version provides native support for all modern browsers. Use the `.polyfills` version (or include your own) to support IE.
-
+If your browser does not support Promises, use a polyfill.
 
 ## License
 
