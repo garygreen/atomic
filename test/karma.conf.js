@@ -5,10 +5,11 @@ module.exports = function (config) {
 		frameworks: ['jasmine'],
 		browsers : ['ChromeHeadless'],
 		files: [
-			'../dist/atomic.js',
-			'spec/*.js'
+			'../src/js/atomic.js',
+			'spec/*.js',
 		],
 		plugins : [
+			'karma-rollup-preprocessor',
 			'karma-chrome-launcher',
 			'karma-spec-reporter',
 			'karma-jasmine',
@@ -17,8 +18,9 @@ module.exports = function (config) {
 		],
 		reporters : ['spec', 'coverage', 'html'],
 		preprocessors: {
-			'../src/**/*.js': 'coverage'
+			'../src/js/atomic.js': ['rollup']
 		},
+		rollupPreprocessor: require('../rollup.config'),
 		coverageReporter: {
 			type : 'html',
 			dir : 'coverage/'
