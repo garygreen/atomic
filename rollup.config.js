@@ -1,5 +1,5 @@
 module.exports = {
-    input: 'src/js/atomic.js',
+    input: 'src/atomic.js',
     output: {
       file: 'dist/atomic.js',
       name: 'atomic',

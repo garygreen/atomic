@@ -5,7 +5,7 @@ module.exports = function (config) {
 		frameworks: ['jasmine'],
 		browsers : ['ChromeHeadless'],
 		files: [
-			'../src/js/atomic.js',
+			'../src/atomic.js',
 			'spec/*.js',
 		],
 		plugins : [
@@ -18,7 +18,7 @@ module.exports = function (config) {
 		],
 		reporters : ['spec', 'coverage', 'html'],
 		preprocessors: {
-			'../src/js/atomic.js': ['rollup']
+			'../src/atomic.js': ['rollup']
 		},
 		rollupPreprocessor: require('../rollup.config'),
 		coverageReporter: {
