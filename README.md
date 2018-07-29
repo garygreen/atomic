@@ -1,4 +1,4 @@
-# Atomic [![Build Status](https://travis-ci.org/cferdinandi/atomic.svg)](https://travis-ci.org/cferdinandi/atomic)
+# Atomic [![Build Status](https://travis-ci.org/garygreen/atomic.svg)](https://travis-ci.org/garygreen/atomic)
 
 A lightweight, Promise-based vanilla JS Ajax/HTTP library.
 
