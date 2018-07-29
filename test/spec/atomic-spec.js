@@ -63,4 +63,28 @@ describe('atomic', function () {
 
 	});
 
+	describe('method aliases', function() {
+
+		it('should alias get', function() {
+			spyOn(XMLHttpRequest.prototype, 'open');
+
+			atomic.get('/endpoint');
+
+			expect(XMLHttpRequest.prototype.open).toHaveBeenCalledWith('GET', '/endpoint', true, null, null);
+		});
+
+		it('should alias post', function() {
+			spyOn(XMLHttpRequest.prototype, 'open').and.callThrough();
+			spyOn(XMLHttpRequest.prototype, 'send');
+
+			atomic.post('/endpoint', { first_name: 'John', last_name: 'Smith' }).then(function() {
+
+			});
+
+			expect(XMLHttpRequest.prototype.open).toHaveBeenCalledWith('POST', '/endpoint', true, null, null);
+			expect(XMLHttpRequest.prototype.send).toHaveBeenCalledWith('first_name=John&last_name=Smith');
+		});
+
+	});
+
 });

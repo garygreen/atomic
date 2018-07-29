@@ -1,9 +1,5 @@
 'use strict';
 
-//
-// Variables
-//
-
 var settings;
 
 // Default settings
@@ -19,11 +15,6 @@ var defaults = {
 	timeout: null,
 	withCredentials: false
 };
-
-
-//
-// Methods
-//
 
 /**
  * Feature test
@@ -190,7 +181,7 @@ var makeRequest = function (url) {
  * @param {String} url      The request URL
  * @param {Object} options  A set of options for the request [optional]
  */
-var Atomic = function (url, options) {
+function Atomic(url, options) {
 
 	// Check browser support
 	if (!supports()) throw 'Atomic: This browser does not support the methods used in this plugin.';
@@ -202,5 +193,13 @@ var Atomic = function (url, options) {
 	return makeRequest(url);
 
 };
+
+Atomic.get = function(url, data, settings) {
+	return new Atomic(url, extend({ data: data }, settings));
+}
+
+Atomic.post = function(url, data, settings) {
+	return new Atomic(url, extend({ data: data, method: 'POST' }, settings));
+}
 
 export default Atomic;
