@@ -5,10 +5,12 @@ describe('atomic', function () {
 
 	beforeEach(function() {
 		jasmine.Ajax.install();
+		jasmine.clock().install()
 	});
 
 	afterEach(function() {
 		jasmine.Ajax.uninstall();
+		jasmine.clock().uninstall();
 	});
 
 	/**
@@ -312,6 +314,23 @@ describe('atomic', function () {
 			expect(XMLHttpRequest.prototype.setRequestHeader).toHaveBeenCalledWith('Overide-Header', 'Overriden.');
 
 			atomic.defaults = oldDefaults;
+		});
+
+	});
+
+	describe('timeout', function() {
+
+		it('should timeout with 408', function(done) {
+			atomic('/endpoint', {
+				timeout: 50
+			})
+			.catch(function(response) {
+				expect(response.status).toEqual(408);
+				done();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+			request.responseTimeout();
 		});
 
 	});

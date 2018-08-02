@@ -104,6 +104,15 @@ var newResponse = function (req) {
 	return response;
 };
 
+var newTimeoutResponse = function(req) {
+	return {
+		status: 408,
+		headers: {},
+		data: '',
+		request: req
+	};
+}
+
 var decodeJson = function(req) {
 
 	if (req.responseType == 'json') {
@@ -164,16 +173,10 @@ var makeRequest = function (url) {
 	// Create the XHR request
 	var request = new XMLHttpRequest();
 
-	// Setup the Promise
 	var xhrPromise = new Promise(function (resolve, reject) {
 
-		// Setup our listener to process compeleted requests
-		request.onreadystatechange = function () {
+		request.onload = function () {
 
-			// Only run if the request is complete
-			if (request.readyState !== 4) return;
-
-			// Process the response
 			if (request.status >= 200 && request.status < 300) {
 				resolve(newResponse(request));
 			} else {
@@ -182,31 +185,23 @@ var makeRequest = function (url) {
 
 		};
 
-		// Setup our HTTP request
 		request.open(settings.method, url, true, settings.username, settings.password);
 		request.responseType = settings.responseType;
 
 		mergeHeaders(request, settings.headers);
 
-		// Set timeout
 		if (settings.timeout) {
 			request.timeout = settings.timeout;
 			request.ontimeout = function (e) {
-				reject({
-					status: 408,
-					statusText: 'Request timeout'
-				});
+				reject(newTimeoutResponse(request));
 			};
 		}
 
-		// Add withCredentials
 		if (settings.withCredentials) {
 			request.withCredentials = true;
 		}
 
-		// Send the request
 		request.send(param(settings.data));
-
 	});
 
 	// Cancel the XHR request
