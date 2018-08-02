@@ -114,6 +114,14 @@ var param = function (obj) {
 	});
 };
 
+var mergeHeaders = function(request, headers) {
+	for (var header in headers) {
+		if (headers.hasOwnProperty(header)) {
+			request.setRequestHeader(header, headers[header]);
+		}
+	}
+};
+
 /**
  * Make an XHR request, returned as a Promise
  * @param  {String} url The request URL
@@ -151,12 +159,7 @@ var makeRequest = function (url) {
 		request.open(settings.method, url, true, settings.username, settings.password);
 		request.responseType = settings.responseType;
 
-		// Add headers
-		for (var header in settings.headers) {
-			if (settings.headers.hasOwnProperty(header)) {
-				request.setRequestHeader(header, settings.headers[header]);
-			}
-		}
+		mergeHeaders(request, settings.headers);
 
 		// Set timeout
 		if (settings.timeout) {
