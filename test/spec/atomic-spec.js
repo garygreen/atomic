@@ -166,6 +166,34 @@ describe('atomic', function () {
 			});
 		});
 
+		it('should provide original request in success', function(pass) {
+			atomic('/endpoint')
+			.then(function(response) {
+				expect(response.request).toEqual(jasmine.any(XMLHttpRequest));
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 200
+			});
+		});
+
+		it('should provide original request in fail', function(pass) {
+			atomic('/endpoint')
+			.catch(function(response) {
+				expect(response.request).toEqual(jasmine.any(XMLHttpRequest));
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 100
+			});
+		});
+
 	})
 
 	describe('contentType', function(){

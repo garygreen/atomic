@@ -85,15 +85,14 @@ var extend = function () {
 };
 
 /**
- * Parse text response into JSON
+ * Generate new response.
+ * 
  * @private
  * @param  {String} req The response
  * @return {Array}      A JSON Object of the responseText, plus the orginal response
  */
-var parse = function (req) {
+var newResponse = function (req) {
 	var headers = normalizeHeaders(req.responseHeaders);
-
-	// console.log(req);
 
 	var response = {
 		status: req.status,
@@ -176,14 +175,9 @@ var makeRequest = function (url) {
 
 			// Process the response
 			if (request.status >= 200 && request.status < 300) {
-				// If successful
-				resolve(parse(request));
+				resolve(newResponse(request));
 			} else {
-				// If failed
-				reject({
-					status: request.status,
-					statusText: request.statusText
-				});
+				reject(newResponse(request));
 			}
 
 		};
