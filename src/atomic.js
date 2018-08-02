@@ -9,9 +9,6 @@ import fd from './fd';
  */
 function Atomic(url, options) {
 
-	// Check browser support
-	if (!supports()) throw 'Atomic: This browser does not support the methods used in this plugin.';
-
 	// Merge options into defaults
 	settings = extend(Atomic.defaults, options || {});
 
@@ -42,14 +39,6 @@ Atomic.post = function(url, data, settings) {
 }
 
 var settings;
-
-/**
- * Feature test
- * @return {Boolean} If true, required methods and APIs are supported
- */
-var supports = function () {
-	return 'XMLHttpRequest' in window && 'JSON' in window && 'Promise' in window;
-};
 
 /**
  * Merge two or more objects together.
