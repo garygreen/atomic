@@ -109,10 +109,6 @@ var parse = function (req) {
  * @return {FormData}
  */
 var param = function (obj) {
-
-	// If the content-type is set to JSON, stringify the JSON object
-	if (/application\/json/i.test(settings.headers['Content-type']) || Object.prototype.toString.call(obj) === '[object Array]') return JSON.stringify(obj);
-
 	return fd(obj, {
 		indices: true
 	});
