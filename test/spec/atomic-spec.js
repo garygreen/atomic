@@ -133,6 +133,14 @@ describe('atomic', function () {
 			expect(request.url).toBe('/endpoint');
 			expect(request.params.get('users[0][name]')).toEqual('John');
 			expect(request.params.get('users[1][name]')).toEqual('Sally');
+			
+		});
+
+		it('should allow passing string', function() {
+			atomic.post('/endpoint', 'test');
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			expect(request.params).toEqual('test');
 		});
 
 	});

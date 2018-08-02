@@ -109,6 +109,11 @@ var parse = function (req) {
  * @return {FormData}
  */
 var param = function (obj) {
+
+	if (typeof obj === 'string') {
+		return obj;
+	}
+	
 	return fd(obj, {
 		indices: true
 	});
