@@ -1,232 +1,285 @@
-/*!
- * atomic v4.2.1: A tiny, Promise-based vanilla JS Ajax/HTTP plugin with great browser support.
- * (c) 2018 Chris Ferdinandi
- * MIT License
- * https://github.com/cferdinandi/atomic
- */
+var atomic = (function () {
+  'use strict';
 
-(function (root, factory) {
-	if (typeof define === 'function' && define.amd) {
-		define([], (function () {
-			return factory(root);
-		}));
-	} else if (typeof exports === 'object') {
-		module.exports = factory(root);
-	} else {
-		window.atomic = factory(root);
-	}
-})(typeof global !== 'undefined' ? global : typeof window !== 'undefined' ? window : this, (function (window) {
+  function isUndefined (value) {
+    return value === undefined
+  }
 
-	'use strict';
+  function isNull (value) {
+    return value === null
+  }
 
-	//
-	// Variables
-	//
+  function isObject (value) {
+    return value === Object(value)
+  }
 
-	var settings;
+  function isArray (value) {
+    return Array.isArray(value)
+  }
 
-	// Default settings
-	var defaults = {
-		method: 'GET',
-		username: null,
-		password: null,
-		data: {},
-		headers: {
-			'Content-type': 'application/x-www-form-urlencoded'
-		},
-		responseType: 'text',
-		timeout: null,
-		withCredentials: false
-	};
+  function isDate (value) {
+    return value instanceof Date
+  }
 
+  function isBlob (value) {
+    return value &&
+      typeof value.size === 'number' &&
+      typeof value.type === 'string' &&
+      typeof value.slice === 'function'
+  }
 
-	//
-	// Methods
-	//
+  function isFile (value) {
+    return isBlob(value) &&
+      (typeof value.lastModifiedDate === 'object' || typeof value.lastModified === 'number') &&
+      typeof value.name === 'string'
+  }
 
-	/**
-	 * Feature test
-	 * @return {Boolean} If true, required methods and APIs are supported
-	 */
-	var supports = function () {
-		return 'XMLHttpRequest' in window && 'JSON' in window && 'Promise' in window;
-	};
+  function isFormData (value) {
+    return value instanceof FormData
+  }
 
-	/**
-	 * Merge two or more objects together.
-	 * @param   {Object}   objects  The objects to merge together
-	 * @returns {Object}            Merged values of defaults and options
-	 */
-	var extend = function () {
+  function objectToFormData (obj, cfg, fd, pre) {
+    if (isFormData(cfg)) {
+      pre = fd;
+      fd = cfg;
+      cfg = null;
+    }
 
-		// Variables
-		var extended = {};
+    cfg = cfg || {};
+    cfg.indices = cfg.indices || false;
+    fd = fd || new FormData();
 
-		// Merge the object into the extended object
-		var merge = function (obj) {
-			for (var prop in obj) {
-				if (obj.hasOwnProperty(prop)) {
-					if (Object.prototype.toString.call(obj[prop]) === '[object Object]') {
-						extended[prop] = extend(extended[prop], obj[prop]);
-					} else {
-						extended[prop] = obj[prop];
-					}
-				}
-			}
-		};
+    if (isUndefined(obj)) {
+      return fd
+    } else if (isNull(obj)) {
+      fd.append(pre, '');
+    } else if (isArray(obj)) {
+      if (!obj.length) {
+        var key = pre + '[]';
 
-		// Loop through each object and conduct a merge
-		for (var i = 0; i < arguments.length; i++) {
-			var obj = arguments[i];
-			merge(obj);
-		}
+        fd.append(key, '');
+      } else {
+        obj.forEach(function (value, index) {
+          var key = pre + '[' + (cfg.indices ? index : '') + ']';
 
-		return extended;
+          objectToFormData(value, cfg, fd, key);
+        });
+      }
+    } else if (isDate(obj)) {
+      fd.append(pre, obj.toISOString());
+    } else if (isObject(obj) && !isFile(obj) && !isBlob(obj)) {
+      Object.keys(obj).forEach(function (prop) {
+        var value = obj[prop];
 
-	};
+        if (isArray(value)) {
+          while (prop.length > 2 && prop.lastIndexOf('[]') === prop.length - 2) {
+            prop = prop.substring(0, prop.length - 2);
+          }
+        }
 
-	/**
-	 * Parse text response into JSON
-	 * @private
-	 * @param  {String} req The response
-	 * @return {Array}      A JSON Object of the responseText, plus the orginal response
-	 */
-	var parse = function (req) {
-		var result;
-		if (settings.responseType !== 'text' && settings.responseType !== '') {
-			return {data: req.response, xhr: req};
-		}
-		try {
-			result = JSON.parse(req.responseText);
-		} catch (e) {
-			result = req.responseText;
-		}
-		return {data: result, xhr: req};
-	};
+        var key = pre ? (pre + '[' + prop + ']') : prop;
 
-	/**
-	 * Convert an object into a query string
-	 * @link   https://blog.garstasio.com/you-dont-need-jquery/ajax/
-	 * @param  {Object|Array|String} obj The object
-	 * @return {String}                  The query string
-	 */
-	var param = function (obj) {
+        objectToFormData(value, cfg, fd, key);
+      });
+    } else {
+      fd.append(pre, obj);
+    }
 
-		// If already a string, or if a FormData object, return it as-is
-		if (typeof (obj) === 'string' || Object.prototype.toString.call(obj) === '[object FormData]') return obj;
+    return fd
+  }
 
-		// If the content-type is set to JSON, stringify the JSON object
-		if (/application\/json/i.test(settings.headers['Content-type']) || Object.prototype.toString.call(obj) === '[object Array]') return JSON.stringify(obj);
+  /**
+   * Instatiate Atomic
+   * @param {String} url      The request URL
+   * @param {Object} options  A set of options for the request [optional]
+   */
+  function Atomic(url, options) {
 
-		// Otherwise, convert object to a serialized string
-		var encoded = [];
-		for (var prop in obj) {
-			if (obj.hasOwnProperty(prop)) {
-				encoded.push(encodeURIComponent(prop) + '=' + encodeURIComponent(obj[prop]));
-			}
-		}
-		return encoded.join('&');
+  	// Check browser support
+  	if (!supports()) throw 'Atomic: This browser does not support the methods used in this plugin.';
 
-	};
+  	// Merge options into defaults
+  	settings = extend(Atomic.defaults, options || {});
 
-	/**
-	 * Make an XHR request, returned as a Promise
-	 * @param  {String} url The request URL
-	 * @return {Promise}    The XHR request Promise
-	 */
-	var makeRequest = function (url) {
+  	// Make request
+  	return makeRequest(url);
 
-		// Create the XHR request
-		var request = new XMLHttpRequest();
+  }
+  Atomic.defaults = {
+  	method: 'GET',
+  	username: null,
+  	password: null,
+  	data: {},
+  	headers: {
+  		'Content-type': 'application/x-www-form-urlencoded'
+  	},
+  	responseType: 'text',
+  	timeout: null,
+  	withCredentials: false
+  };
 
-		// Setup the Promise
-		var xhrPromise = new Promise(function (resolve, reject) {
+  Atomic.get = function(url, data, settings) {
+  	return new Atomic(url, extend({ data: data }, settings));
+  };
 
-			// Setup our listener to process compeleted requests
-			request.onreadystatechange = function () {
+  Atomic.post = function(url, data, settings) {
+  	return new Atomic(url, extend({ data: data, method: 'POST' }, settings));
+  };
 
-				// Only run if the request is complete
-				if (request.readyState !== 4) return;
+  var settings;
 
-				// Process the response
-				if (request.status >= 200 && request.status < 300) {
-					// If successful
-					resolve(parse(request));
-				} else {
-					// If failed
-					reject({
-						status: request.status,
-						statusText: request.statusText
-					});
-				}
+  /**
+   * Feature test
+   * @return {Boolean} If true, required methods and APIs are supported
+   */
+  var supports = function () {
+  	return 'XMLHttpRequest' in window && 'JSON' in window && 'Promise' in window;
+  };
 
-			};
+  /**
+   * Merge two or more objects together.
+   * @param   {Object}   objects  The objects to merge together
+   * @returns {Object}            Merged values of defaults and options
+   */
+  var extend = function () {
 
-			// Setup our HTTP request
-			request.open(settings.method, url, true, settings.username, settings.password);
-			request.responseType = settings.responseType;
+  	// Variables
+  	var extended = {};
 
-			// Add headers
-			for (var header in settings.headers) {
-				if (settings.headers.hasOwnProperty(header)) {
-					request.setRequestHeader(header, settings.headers[header]);
-				}
-			}
+  	// Merge the object into the extended object
+  	var merge = function (obj) {
+  		for (var prop in obj) {
+  			if (obj.hasOwnProperty(prop)) {
+  				if (Object.prototype.toString.call(obj[prop]) === '[object Object]') {
+  					extended[prop] = extend(extended[prop], obj[prop]);
+  				} else {
+  					extended[prop] = obj[prop];
+  				}
+  			}
+  		}
+  	};
 
-			// Set timeout
-			if (settings.timeout) {
-				request.timeout = settings.timeout;
-				request.ontimeout = function (e) {
-					reject({
-						status: 408,
-						statusText: 'Request timeout'
-					});
-				};
-			}
+  	// Loop through each object and conduct a merge
+  	for (var i = 0; i < arguments.length; i++) {
+  		var obj = arguments[i];
+  		merge(obj);
+  	}
 
-			// Add withCredentials
-			if (settings.withCredentials) {
-				request.withCredentials = true;
-			}
+  	return extended;
 
-			// Send the request
-			request.send(param(settings.data));
+  };
 
-		});
+  /**
+   * Parse text response into JSON
+   * @private
+   * @param  {String} req The response
+   * @return {Array}      A JSON Object of the responseText, plus the orginal response
+   */
+  var parse = function (req) {
+  	var result;
+  	if (settings.responseType !== 'text' && settings.responseType !== '') {
+  		return {data: req.response, xhr: req};
+  	}
+  	try {
+  		result = JSON.parse(req.responseText);
+  	} catch (e) {
+  		result = req.responseText;
+  	}
+  	return {data: result, xhr: req};
+  };
 
-		// Cancel the XHR request
-		xhrPromise.cancel = function () {
-			request.abort();
-		};
+  /**
+   * Convert an object into a query string
+   * @link   https://blog.garstasio.com/you-dont-need-jquery/ajax/
+   * @param  {Object|Array|String} obj The object
+   * @return {String}                  The query string
+   */
+  var param = function (obj) {
 
-		// Return the request as a Promise
-		return xhrPromise;
+  	// If the content-type is set to JSON, stringify the JSON object
+  	if (/application\/json/i.test(settings.headers['Content-type']) || Object.prototype.toString.call(obj) === '[object Array]') return JSON.stringify(obj);
 
-	};
+  	return objectToFormData(obj, {
+  		indices: true
+  	});
 
-	/**
-	 * Instatiate Atomic
-	 * @param {String} url      The request URL
-	 * @param {Object} options  A set of options for the request [optional]
-	 */
-	var Atomic = function (url, options) {
+  };
 
-		// Check browser support
-		if (!supports()) throw 'Atomic: This browser does not support the methods used in this plugin.';
+  /**
+   * Make an XHR request, returned as a Promise
+   * @param  {String} url The request URL
+   * @return {Promise}    The XHR request Promise
+   */
+  var makeRequest = function (url) {
 
-		// Merge options into defaults
-		settings = extend(defaults, options || {});
+  	// Create the XHR request
+  	var request = new XMLHttpRequest();
 
-		// Make request
-		return makeRequest(url);
+  	// Setup the Promise
+  	var xhrPromise = new Promise(function (resolve, reject) {
 
-	};
+  		// Setup our listener to process compeleted requests
+  		request.onreadystatechange = function () {
 
+  			// Only run if the request is complete
+  			if (request.readyState !== 4) return;
 
-	//
-	// Public Methods
-	//
+  			// Process the response
+  			if (request.status >= 200 && request.status < 300) {
+  				// If successful
+  				resolve(parse(request));
+  			} else {
+  				// If failed
+  				reject({
+  					status: request.status,
+  					statusText: request.statusText
+  				});
+  			}
 
-	return Atomic;
+  		};
 
-}));
+  		// Setup our HTTP request
+  		request.open(settings.method, url, true, settings.username, settings.password);
+  		request.responseType = settings.responseType;
+
+  		// Add headers
+  		for (var header in settings.headers) {
+  			if (settings.headers.hasOwnProperty(header)) {
+  				request.setRequestHeader(header, settings.headers[header]);
+  			}
+  		}
+
+  		// Set timeout
+  		if (settings.timeout) {
+  			request.timeout = settings.timeout;
+  			request.ontimeout = function (e) {
+  				reject({
+  					status: 408,
+  					statusText: 'Request timeout'
+  				});
+  			};
+  		}
+
+  		// Add withCredentials
+  		if (settings.withCredentials) {
+  			request.withCredentials = true;
+  		}
+
+  		// Send the request
+  		request.send(param(settings.data));
+
+  	});
+
+  	// Cancel the XHR request
+  	xhrPromise.cancel = function () {
+  		request.abort();
+  	};
+
+  	// Return the request as a Promise
+  	return xhrPromise;
+
+  };
+
+  return Atomic;
+
+}());
