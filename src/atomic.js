@@ -91,17 +91,45 @@ var extend = function () {
  * @return {Array}      A JSON Object of the responseText, plus the orginal response
  */
 var parse = function (req) {
-	var result;
-	if (settings.responseType !== 'text' && settings.responseType !== '') {
-		return {data: req.response, xhr: req};
-	}
-	try {
-		result = JSON.parse(req.responseText);
-	} catch (e) {
-		result = req.responseText;
-	}
-	return {data: result, xhr: req};
+	var headers = normalizeHeaders(req.responseHeaders);
+
+	// console.log(req);
+
+	var response = {
+		status: req.status,
+		headers: headers,
+		data: responseIsJson(req, headers) ? decodeJson(req) : req.responseText,
+		request: req
+	};
+
+	return response;
 };
+
+var decodeJson = function(req) {
+
+	if (req.responseType == 'json') {
+		return req.response;
+	}
+
+	if (req.responseText === '') {
+		return;
+	}
+
+	return JSON.parse(req.responseText);
+}
+
+var normalizeHeaders = function(responseHeaders) {
+	var headers = [];
+	for (var i = 0, header; i < responseHeaders.length; i++) {
+		headers[responseHeaders[i].name.toLowerCase()] = responseHeaders[i].value;
+	}
+
+	return headers;
+}
+
+var responseIsJson = function(req, headers) {
+	return req.responseType == 'json' || headers['content-type'] == 'application/json';
+}
 
 /**
  * Convert an object into a query string
@@ -113,7 +141,7 @@ var param = function (obj) {
 	if (typeof obj === 'string') {
 		return obj;
 	}
-	
+
 	return fd(obj, {
 		indices: true
 	});

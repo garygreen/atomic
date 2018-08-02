@@ -39,7 +39,134 @@ describe('atomic', function () {
 			expect(request.method).toBe('CUSTOM');
 		});
 
+		it('should call then callback when succesfull request', function(pass) {
+			atomic('/endpoint')
+			.then(function() {
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 200
+			});
+		});
+
 	});
+
+	describe('response', function() {
+
+		it('should set 200 status code', function(pass) {
+			atomic('/endpoint')
+			.then(function(response) {
+				expect(response.status).toEqual(200);
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 200
+			});
+		});
+
+		it('should set 299 status code', function(pass) {
+			atomic('/endpoint')
+			.then(function(response) {
+				expect(response.status).toEqual(299);
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 299
+			});
+		});
+
+		it('should fail when <= 199 status code', function(pass) {
+			atomic('/endpoint')
+			.catch(function(response) {
+				expect(response.status).toEqual(199);
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 199
+			});
+		});
+
+		it('should fail when >= 300 status code', function(pass) {
+			atomic('/endpoint')
+			.catch(function(response) {
+				expect(response.status).toEqual(300);
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 300
+			});
+		});
+
+		it('should provide raw data', function(pass) {
+			atomic('/endpoint')
+			.then(function(response) {
+				expect(response.data).toEqual('test');
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 200,
+				contentType: 'text/plain',
+				responseText: 'test'
+			});
+		});
+
+		it('should automatically decode json if response type is json', function(pass) {
+			atomic('/endpoint', {
+				responseType: 'json'
+			})
+			.then(function(response) {
+				expect(response.data.first_name).toEqual('Bob');
+				expect(response.data.last_name).toEqual('Sally');
+				
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 200,
+				contentType: 'text/plain',
+				responseType: 'json', // This needs to be set, even though it's not needed in the browser. See: https://github.com/jasmine/jasmine-ajax/issues/175
+				responseText: JSON.stringify({ first_name: 'Bob', last_name: 'Sally' })
+			});
+		});
+
+		it('should automatically decode json if response "Content-Type" is application/json', function(pass) {
+			atomic('/endpoint')
+			.then(function(response) {
+				expect(response.data.fruit).toEqual('Strawberry');
+				
+				pass();
+			});
+
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			request.respondWith({
+				status: 200,
+				contentType: 'application/json',
+				responseText: JSON.stringify({ fruit: 'Strawberry' })
+			});
+		});
+
+	})
 
 	describe('contentType', function(){
 
@@ -72,8 +199,6 @@ describe('atomic', function () {
 			expect(request.requestHeaders['Custom-Header']).toBe('Testing');
 		});
 
-		// it('should allow sending multi array', 
-
 	});
 
 	describe('method aliases', function() {
@@ -87,18 +212,6 @@ describe('atomic', function () {
 		});
 
 		it('should alias post', function() {
-			// jasmine.Ajax.addCustomParamParser({
-			// 	test: function(xhr) {
-			// 		return true;
-			// 	  // return true if you can parse
-			// 	},
-			// 	parse: function(params) {
-			// 		// return params;
-			// 		console.log('!!',params);
-					
-			// 	  // parse and return
-			// 	}
-			//   });
 
 			atomic.post('/endpoint', {
 				first_name: 'John',
