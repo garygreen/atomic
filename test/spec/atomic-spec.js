@@ -3,86 +3,136 @@
  */
 describe('atomic', function () {
 
+	beforeEach(function() {
+		jasmine.Ajax.install();
+	});
+
+	afterEach(function() {
+		jasmine.Ajax.uninstall();
+	});
+
 	/**
 	 * xhr
 	 */
 	describe('xhr', function () {
 
-		beforeEach(function () {
-			spyOn(XMLHttpRequest.prototype, 'open').and.callThrough();
-			spyOn(XMLHttpRequest.prototype, 'send');
-			spyOn(XMLHttpRequest.prototype, 'setRequestHeader');
+		it('should send GET request', function () {
+			atomic('/endpoint');
+			var request = jasmine.Ajax.requests.mostRecent();
+			expect(request.url).toBe('/endpoint');
+			expect(request.method).toBe('GET');
 		});
 
-		it('should open an XMLHttpRequest', function () {
-			atomic('/endpoint')
-				.then(function (response) {})
-				.catch(function (error) {});
-			expect(XMLHttpRequest.prototype.open).toHaveBeenCalled();
+		it('should allow sending POST request', function () {
+			atomic('/endpoint', { method: 'POST' });
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			expect(request.url).toBe('/endpoint');
+			expect(request.method).toBe('POST');
 		});
 
-		it('should send and XMLHttpRequest', function () {
-			atomic('/endpoint')
-			.then(function (response) {})
-			.catch(function (error) {});
-			expect(XMLHttpRequest.prototype.send).toHaveBeenCalled();
-		});
+		it('should allow sending custom method', function () {
+			atomic('/endpoint', { method: 'CUSTOM' });
+			var request = jasmine.Ajax.requests.mostRecent();
 
-		it('should set request header', function(){
-			atomic('/endpoint')
-			.then(function (response) {})
-			.catch(function (error) {});
-			expect(XMLHttpRequest.prototype.setRequestHeader).toHaveBeenCalled();
+			expect(request.url).toBe('/endpoint');
+			expect(request.method).toBe('CUSTOM');
 		});
 
 	});
 
 	describe('contentType', function(){
 
-		beforeEach(function(){
-			spyOn(XMLHttpRequest.prototype, 'setRequestHeader');
-		});
-
 		it('should use "application/x-www-form-urlencoded" as default Content-type', function(){
 			atomic('/endpoint');
+			var request = jasmine.Ajax.requests.mostRecent();
 
-			expect(XMLHttpRequest.prototype.setRequestHeader)
-					.toHaveBeenCalledWith('Content-type', 'application/x-www-form-urlencoded');
+			expect(request.requestHeaders['Content-type']).toBe('application/x-www-form-urlencoded');
 		});
 
-		it('should set Content-type', function() {
+		it('should be able to set custom type', function() {
 			atomic('/endpoint', {
 				headers: {
 					'Content-type': 'application/json'
 				}
 			});
+			var request = jasmine.Ajax.requests.mostRecent();
 
-			expect(XMLHttpRequest.prototype.setRequestHeader)
-					.toHaveBeenCalledWith('Content-type', 'application/json');
+			expect(request.requestHeaders['Content-type']).toBe('application/json');
 		});
+		
+		it('should be able to set custom header', function() {
+			atomic('/endpoint', {
+				headers: {
+					'Custom-Header': 'Testing'
+				}
+			});
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			expect(request.requestHeaders['Custom-Header']).toBe('Testing');
+		});
+
+		// it('should allow sending multi array', 
 
 	});
 
 	describe('method aliases', function() {
 
 		it('should alias get', function() {
-			spyOn(XMLHttpRequest.prototype, 'open');
-
 			atomic.get('/endpoint');
+			var request = jasmine.Ajax.requests.mostRecent();
 
-			expect(XMLHttpRequest.prototype.open).toHaveBeenCalledWith('GET', '/endpoint', true, null, null);
+			expect(request.method).toBe('GET')
+			expect(request.url).toBe('/endpoint');
 		});
 
 		it('should alias post', function() {
-			spyOn(XMLHttpRequest.prototype, 'open').and.callThrough();
-			spyOn(XMLHttpRequest.prototype, 'send');
+			// jasmine.Ajax.addCustomParamParser({
+			// 	test: function(xhr) {
+			// 		return true;
+			// 	  // return true if you can parse
+			// 	},
+			// 	parse: function(params) {
+			// 		// return params;
+			// 		console.log('!!',params);
+					
+			// 	  // parse and return
+			// 	}
+			//   });
 
-			atomic.post('/endpoint', { first_name: 'John', last_name: 'Smith' }).then(function() {
-
+			atomic.post('/endpoint', {
+				first_name: 'John',
+				last_name: 'Smith'
 			});
+			var request = jasmine.Ajax.requests.mostRecent();
 
-			expect(XMLHttpRequest.prototype.open).toHaveBeenCalledWith('POST', '/endpoint', true, null, null);
-			expect(XMLHttpRequest.prototype.send).toHaveBeenCalledWith('first_name=John&last_name=Smith');
+			expect(request.method).toBe('POST')
+			expect(request.url).toBe('/endpoint');
+			expect(request.params.get('first_name')).toEqual('John');
+			expect(request.params.get('last_name')).toEqual('Smith');
+		});
+
+	});
+
+	describe('data params', function() {
+
+		it('should allow multi array', function() {
+			atomic.post('/endpoint', {
+				users: [
+					{
+						name: 'John',
+					},
+					{
+						name: 'Sally'
+					}
+				]
+			});
+			var request = jasmine.Ajax.requests.mostRecent();
+
+			expect(request.method).toBe('POST')
+			expect(request.url).toBe('/endpoint');
+			expect(request.params.get('users[0][name]')).toEqual('John');
+			expect(request.params.get('users[1][name]')).toEqual('Sally');
 		});
 
 	});
@@ -113,18 +163,6 @@ describe('atomic', function () {
 			expect(XMLHttpRequest.prototype.setRequestHeader).toHaveBeenCalledWith('Overide-Header', 'Overriden.');
 
 			atomic.defaults = oldDefaults;
-		});
-
-		it('should alias post', function() {
-			spyOn(XMLHttpRequest.prototype, 'open').and.callThrough();
-			spyOn(XMLHttpRequest.prototype, 'send');
-
-			atomic.post('/endpoint', { first_name: 'John', last_name: 'Smith' }).then(function() {
-
-			});
-
-			expect(XMLHttpRequest.prototype.open).toHaveBeenCalledWith('POST', '/endpoint', true, null, null);
-			expect(XMLHttpRequest.prototype.send).toHaveBeenCalledWith('first_name=John&last_name=Smith');
 		});
 
 	});

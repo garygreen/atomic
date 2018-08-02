@@ -1,5 +1,7 @@
 'use strict';
 
+import fd from './fd';
+
 /**
  * Instatiate Atomic
  * @param {String} url      The request URL
@@ -103,27 +105,17 @@ var parse = function (req) {
 
 /**
  * Convert an object into a query string
- * @link   https://blog.garstasio.com/you-dont-need-jquery/ajax/
  * @param  {Object|Array|String} obj The object
- * @return {String}                  The query string
+ * @return {FormData}
  */
 var param = function (obj) {
-
-	// If already a string, or if a FormData object, return it as-is
-	if (typeof (obj) === 'string' || Object.prototype.toString.call(obj) === '[object FormData]') return obj;
 
 	// If the content-type is set to JSON, stringify the JSON object
 	if (/application\/json/i.test(settings.headers['Content-type']) || Object.prototype.toString.call(obj) === '[object Array]') return JSON.stringify(obj);
 
-	// Otherwise, convert object to a serialized string
-	var encoded = [];
-	for (var prop in obj) {
-		if (obj.hasOwnProperty(prop)) {
-			encoded.push(encodeURIComponent(prop) + '=' + encodeURIComponent(obj[prop]));
-		}
-	}
-	return encoded.join('&');
-
+	return fd(obj, {
+		indices: true
+	});
 };
 
 /**
