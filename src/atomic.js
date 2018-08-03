@@ -81,7 +81,7 @@ var extend = function () {
  * @return {Array}      A JSON Object of the responseText, plus the orginal response
  */
 var newResponse = function (req) {
-	var headers = normalizeHeaders(req.responseHeaders);
+	var headers = normalizeHeaders(req);
 
 	var response = {
 		status: req.status,
@@ -115,10 +115,11 @@ var decodeJson = function(req) {
 	return JSON.parse(req.responseText);
 }
 
-var normalizeHeaders = function(responseHeaders) {
-	var headers = [];
-	for (var i = 0, header; i < responseHeaders.length; i++) {
-		headers[responseHeaders[i].name.toLowerCase()] = responseHeaders[i].value;
+var normalizeHeaders = function(req) {
+	var headers = {}, headerLines = req.getAllResponseHeaders().replace(/\r\n$/, '').split("\r\n");
+	for (var i = 0, header; i < headerLines.length; i++) {
+		header = headerLines[i].split(': ');
+		headers[header[0].toLowerCase()] = header[1];
 	}
 
 	return headers;
