@@ -25,7 +25,7 @@ Atomic.defaults = {
 }
 
 Atomic.get = function(url, data, settings) {
-	return new Atomic(url, extend({ data: data }, settings));
+	return new Atomic(url, extend({ data: data, method: 'GET' }, settings));
 }
 
 Atomic.post = function(url, data, settings) {
@@ -89,14 +89,7 @@ var responseIsJson = function(req, headers) {
  * @return {FormData}
  */
 var param = function (obj) {
-
-	if (typeof obj === 'string') {
-		return obj;
-	}
-
-	return fd(obj, {
-		indices: true
-	});
+	return typeof obj === 'string' ? obj : fd(obj, { indices: true });
 }
 
 var mergeHeaders = function(request, headers) {
