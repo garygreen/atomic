@@ -1,12 +1,15 @@
 'use strict';
 
 import fd from './fd';
+import extend from './extend';
+
+var settings;
 
 function Atomic(url, options) {
 	settings = extend(Atomic.defaults, options || {});
 
 	return makeRequest(url);
-};
+}
 
 Atomic.defaults = {
 	method: 'GET',
@@ -19,7 +22,7 @@ Atomic.defaults = {
 	responseType: 'text',
 	timeout: null,
 	withCredentials: false
-};
+}
 
 Atomic.get = function(url, data, settings) {
 	return new Atomic(url, extend({ data: data }, settings));
@@ -28,33 +31,6 @@ Atomic.get = function(url, data, settings) {
 Atomic.post = function(url, data, settings) {
 	return new Atomic(url, extend({ data: data, method: 'POST' }, settings));
 }
-
-var settings;
-
-var extend = function () {
-
-	var extended = {};
-
-	var merge = function (obj) {
-		for (var prop in obj) {
-			if (obj.hasOwnProperty(prop)) {
-				if (Object.prototype.toString.call(obj[prop]) === '[object Object]') {
-					extended[prop] = extend(extended[prop], obj[prop]);
-				} else {
-					extended[prop] = obj[prop];
-				}
-			}
-		}
-	};
-
-	for (var i = 0; i < arguments.length; i++) {
-		var obj = arguments[i];
-		merge(obj);
-	}
-
-	return extended;
-
-};
 
 var newResponse = function (req) {
 	var headers = normalizeHeaders(req);
@@ -67,7 +43,7 @@ var newResponse = function (req) {
 	};
 
 	return response;
-};
+}
 
 var newTimeoutResponse = function(req) {
 	return {
@@ -79,7 +55,6 @@ var newTimeoutResponse = function(req) {
 }
 
 var decodeJson = function(req) {
-
 	if (req.responseType == 'json') {
 		return req.response;
 	}
@@ -92,11 +67,14 @@ var decodeJson = function(req) {
 }
 
 var normalizeHeaders = function(req) {
-	var headers = {}, headerLines = req.getAllResponseHeaders().replace(/\r\n$/, '').split("\r\n");
-	for (var i = 0, header; i < headerLines.length; i++) {
-		header = headerLines[i].split(': ');
-		headers[header[0].toLowerCase()] = header[1];
-	}
+	var headers = {};
+	req.getAllResponseHeaders()
+		.replace(/\r\n$/, '')
+		.split("\r\n")
+		.map(function(line) {
+			var header = line.split(': ');
+			headers[header[0].toLowerCase()] = header[1];
+		});
 
 	return headers;
 }
@@ -119,15 +97,13 @@ var param = function (obj) {
 	return fd(obj, {
 		indices: true
 	});
-};
+}
 
 var mergeHeaders = function(request, headers) {
 	for (var header in headers) {
-		if (headers.hasOwnProperty(header)) {
-			request.setRequestHeader(header, headers[header]);
-		}
+		request.setRequestHeader(header, headers[header]);
 	}
-};
+}
 
 var makeRequest = function (url) {
 
@@ -170,6 +146,6 @@ var makeRequest = function (url) {
 
 	return xhrPromise;
 
-};
+}
 
 export default Atomic;
