@@ -2,19 +2,10 @@
 
 import fd from './fd';
 
-/**
- * Instatiate Atomic
- * @param {String} url      The request URL
- * @param {Object} options  A set of options for the request [optional]
- */
 function Atomic(url, options) {
-
-	// Merge options into defaults
 	settings = extend(Atomic.defaults, options || {});
 
-	// Make request
 	return makeRequest(url);
-
 };
 
 Atomic.defaults = {
@@ -40,17 +31,10 @@ Atomic.post = function(url, data, settings) {
 
 var settings;
 
-/**
- * Merge two or more objects together.
- * @param   {Object}   objects  The objects to merge together
- * @returns {Object}            Merged values of defaults and options
- */
 var extend = function () {
 
-	// Variables
 	var extended = {};
 
-	// Merge the object into the extended object
 	var merge = function (obj) {
 		for (var prop in obj) {
 			if (obj.hasOwnProperty(prop)) {
@@ -63,7 +47,6 @@ var extend = function () {
 		}
 	};
 
-	// Loop through each object and conduct a merge
 	for (var i = 0; i < arguments.length; i++) {
 		var obj = arguments[i];
 		merge(obj);
@@ -73,13 +56,6 @@ var extend = function () {
 
 };
 
-/**
- * Generate new response.
- * 
- * @private
- * @param  {String} req The response
- * @return {Array}      A JSON Object of the responseText, plus the orginal response
- */
 var newResponse = function (req) {
 	var headers = normalizeHeaders(req);
 
@@ -153,14 +129,8 @@ var mergeHeaders = function(request, headers) {
 	}
 };
 
-/**
- * Make an XHR request, returned as a Promise
- * @param  {String} url The request URL
- * @return {Promise}    The XHR request Promise
- */
 var makeRequest = function (url) {
 
-	// Create the XHR request
 	var request = new XMLHttpRequest();
 
 	var xhrPromise = new Promise(function (resolve, reject) {
@@ -194,12 +164,10 @@ var makeRequest = function (url) {
 		request.send(param(settings.data));
 	});
 
-	// Cancel the XHR request
 	xhrPromise.cancel = function () {
 		request.abort();
 	};
 
-	// Return the request as a Promise
 	return xhrPromise;
 
 };
