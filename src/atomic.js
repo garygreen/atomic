@@ -140,12 +140,9 @@ var makeRequest = function (url) {
 		request.send(param(settings.data));
 	});
 
-	xhrPromise.cancel = function () {
-		request.abort();
-	};
+	xhrPromise.request = request;
 
 	return xhrPromise;
-
 }
 
 export default Atomic;

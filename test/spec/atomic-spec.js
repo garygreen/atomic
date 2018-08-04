@@ -54,6 +54,10 @@ describe('atomic', function () {
 			});
 		});
 
+		it('should return request from promise', function() {
+			expect(atomic('/endpoint').request).toEqual(jasmine.any(XMLHttpRequest));
+		});
+
 	});
 
 	describe('response', function() {
@@ -206,6 +210,15 @@ describe('atomic', function () {
 
 			expect(request.requestHeaders['Content-type']).toBe('application/x-www-form-urlencoded');
 		});
+
+		// it('should use "multipart/form-data" if blob is found in data', function() {
+		// 	atomic('/endpoint').post({
+		// 		file: new Blob
+		// 	});
+		// 	var request = jasmine.Ajax.requests.mostRecent();
+
+		// 	expect(request.requestHeaders['Content-type']).toBe('multipart/form-data');
+		// });
 
 		it('should be able to set custom type', function() {
 			atomic('/endpoint', {
