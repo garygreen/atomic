@@ -208,7 +208,7 @@ describe('atomic', function () {
 			atomic('/endpoint');
 			var request = jasmine.Ajax.requests.mostRecent();
 
-			expect(request.requestHeaders['Content-type']).toBe('application/x-www-form-urlencoded');
+			expect(request.requestHeaders['content-type']).toBe('application/x-www-form-urlencoded');
 		});
 
 		// it('should use "multipart/form-data" if blob is found in data', function() {

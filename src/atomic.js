@@ -17,7 +17,7 @@ Atomic.defaults = {
 	password: null,
 	data: {},
 	headers: {
-		'Content-type': 'application/x-www-form-urlencoded'
+		'content-type': 'application/x-www-form-urlencoded'
 	},
 	responseType: 'text',
 	timeout: null,
